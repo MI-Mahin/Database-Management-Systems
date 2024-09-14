@@ -1,0 +1,184 @@
+--1
+CREATE (c1:Customer {customer_id: 102, name: 'John', phone_no: '123-456-7890', age: 30, gender: 'Male', country: 'USA'}),
+       (c2:Customer {customer_id: 123, name: 'Alice', phone_no: '987-654-3210', age: 25, gender: 'Female', country: 'UK'}),
+       (c3:Customer {customer_id: 311, name: 'Bob', phone_no: '555-555-5555', age: 40, gender: 'Male', country: 'Canada'})
+
+--2
+CREATE (a:Author {author_name: 'J.K. Rowling', country: 'UK'})
+
+
+--3
+CREATE (b1:Book {isbn: '1408855652', title: 'Harry Potter and the Philosopher’s Stone', genre: 'Fantasy', published_year: 1997, price: 9.99}),
+       (b2:Book {isbn: '0439064866', title: 'Harry Potter and the Chamber of Secrets', genre: 'Fantasy', published_year: 1998, price: 10.99})
+
+
+--4
+MATCH (a:Author {author_name: 'J.K. Rowling'})
+MATCH (b1:Book {isbn: '1408855652'})
+MATCH (b2:Book {isbn: '0439064866'})
+CREATE (a)-[:WROTE]->(b1),
+       (a)-[:WROTE]->(b2)
+
+
+--5
+CREATE (a1:Author {author_name: 'Stephen King', country: 'USA'}),
+       (b1:Book {isbn: '1982102319', title: 'The Shining', genre: 'Horror', published_year: 1977, price: 12.99})
+CREATE (a1)-[:WROTE]->(b1)
+
+CREATE (a2:Author {author_name: 'Agatha Christie', country: 'UK'}),
+       (b2:Book {isbn: '0062073492', title: 'Murder on the Orient Express', genre: 'Mystery', published_year: 1934, price: 8.99})
+CREATE (a2)-[:WROTE]->(b2)
+
+
+--6
+MATCH (c1:Customer {customer_id: 123})
+MATCH (b1:Book {isbn: '1408855652'})
+CREATE (c1)-[:PURCHASED {amount: 3}]->(b1)
+
+WITH c1
+MATCH (c2:Customer {customer_id: 123})
+MATCH (b2:Book {isbn: '0439064866'})
+CREATE (c2)-[:PURCHASED {amount: 1}]->(b2)
+
+WITH c1, c2
+MATCH (c3:Customer {customer_id: 311})
+MATCH (b3:Book {isbn: '0062073492'})
+CREATE (c3)-[:PURCHASED {amount: 1}]->(b3)
+
+WITH c1, c2, c3
+MATCH (c4:Customer {customer_id: 102})
+MATCH (b4:Book {isbn: '0062073492'})
+CREATE (c4)-[:PURCHASED {amount: 1}]->(b4)
+
+
+--7
+MATCH (c1:Customer {customer_id: 123})
+MATCH (b1:Book {isbn: '1408855652'})
+CREATE (c1)-[:RATED {rating: 5, rating_date: date('2021-02-11')}]->(b1)
+
+WITH c1
+MATCH (c2:Customer {customer_id: 311})
+MATCH (b2:Book {isbn: '1408855652'})
+CREATE (c2)-[:RATED {rating: 3, rating_date: date('2022-04-19')}]->(b2)
+
+WITH c2
+MATCH (c3:Customer {customer_id: 311})
+MATCH (b3:Book {isbn: '0062073492'})
+CREATE (c3)-[:RATED {rating: 4, rating_date: date('2024-01-09')}]->(b3)
+
+WITH c3
+MATCH (c4:Customer {customer_id: 102})
+MATCH (b4:Book {isbn: '0062073492'})
+CREATE (c4)-[:RATED {rating: 5, rating_date: date('2023-04-04')}]->(b4)
+
+WITH c4
+MATCH (c5:Customer {customer_id: 123})
+MATCH (a:Author {author_name: 'J.K. Rowling'})
+CREATE (c5)-[:RATED {rating: 5, rating_date: date('2021-03-12')}]->(a)
+
+WITH c5
+MATCH (c6:Customer {customer_id: 123})
+MATCH (a:Author {author_name: 'Stephen King'})
+CREATE (c6)-[:RATED {rating: 2, rating_date: date('2023-03-18')}]->(a)
+
+
+--8
+MATCH (c1:Customer {customer_id: 123}), (c2:Customer {customer_id: 311})
+CREATE (c1)-[:FOLLOWS]->(c2)
+
+WITH c2
+MATCH (c3:Customer {customer_id: 311}), (c4:Customer {customer_id: 123})
+CREATE (c3)-[:FOLLOWS]->(c4)
+
+WITH c3
+MATCH (c5:Customer {customer_id: 311}), (c6:Customer {customer_id: 102})
+CREATE (c5)-[:FOLLOWS]->(c6)
+
+WITH c5
+MATCH (c7:Customer {customer_id: 123}), (a1:Author {author_name: 'J.K. Rowling'})
+CREATE (c7)-[:FOLLOWS]->(a1)
+
+WITH c7
+MATCH (c8:Customer {customer_id: 311}), (a2:Author {author_name: 'Agatha Christie'})
+CREATE (c8)-[:FOLLOWS]->(a2)
+
+WITH c8
+MATCH (c9:Customer {customer_id: 102}), (a3:Author {author_name: 'Agatha Christie'})
+CREATE (c9)-[:FOLLOWS]->(a3)
+
+
+--10
+--a
+MATCH (c:Customer)-[r:RATED]->(b:Book)
+RETURN b
+
+--b
+MATCH (c1)-[f:FOLLOWS]->(c2) RETURN f
+
+--c
+MATCH (b:Book {title: 'Harry Potter and the Philosopher’s Stone'})<-[r:RATED]-(c:Customer)
+WITH b, r.rating AS rating
+RETURN avg(rating) AS average_rating
+
+--d
+MATCH (b:Book)
+WITH b
+ORDER BY b.price DESC
+SKIP 1
+LIMIT 1
+RETURN b.title AS second_expensive_book
+
+--e
+MATCH (c:Customer)-[:FOLLOWS]->(a:Author)
+MATCH (c)-[p:PURCHASED]->(b:Book)
+MATCH(a:Author)-[:WROTE]->(b:Book)   
+RETURN c.name AS customer_name, b.title AS book_name, p.amount AS amount
+
+--f
+MATCH (c:Customer)-[:RATED]->
+(:Book)<-[:WROTE]-(:Author {author_name: 'J.K. Rowling'})
+MATCH (c)-[:FOLLOWS]->(:Author {author_name: 'J.K. Rowling'})
+RETURN c.name AS customer_name
+
+--g
+MATCH (a:Author)<-[r:RATED]-(:Customer)
+WITH a, r.rating_date AS rating_date
+ORDER BY rating_date DESC
+LIMIT 1
+RETURN a.author_name AS latest_rated_author
+
+--h
+OPTIONAL MATCH (a:Author)-[:WROTE]->(b:Book)
+WHERE b.genre IN ['Mystery', 'Fantasy']
+OPTIONAL MATCH (:Customer)-[r:RATED]->(a)
+RETURN a.author_name AS author_name, r.rating AS author_rating
+
+
+--11
+--a
+MATCH (a:Author {author_name: 'Agatha Christie'})
+SET a:playwright
+
+--b
+MATCH (b:Book {title: 'The Shining'})
+SET b.published_year = 1980
+
+--c
+MATCH (:Customer)-[old:RATED]->(:Author)
+SET old.star = old.rating
+REMOVE old.rating
+
+
+--12
+--a
+MATCH (a:Author {author_name: 'Stephen King'})
+DETACH DELETE a
+
+--b
+MATCH (:Customer)-[f:FOLLOWS]->(:Customer)
+DELETE f
+
+--c
+MATCH (:Customer)-[r:RATED]->()
+WHERE r.rating_date < date('2022-01-01')
+DELETE r

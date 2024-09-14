@@ -1,0 +1,116 @@
+--01
+CREATE VIEW ADVISOR_SELECTION AS
+SELECT 
+ID,
+NAME,
+DEPT_NAME
+FROM INSTRUCTOR;
+
+--02
+CREATE VIEW STUDENT_COUNT AS 
+SELECT 
+ADVISOR_SELECTION.NAME,
+COUNT(ADVISOR.S_ID) AS STUDENT_COUNT
+FROM
+ADVISOR_SELECTION
+LEFT JOIN ADVISOR
+ON ADVISOR_SELECTION.ID = ADVISOR.I_ID
+GROUP BY
+ADVISOR_SELECTION.NAME;
+
+--03
+--CREATE ROLE
+CREATE ROLE STUDENT;
+CREATE ROLE COURSE_TEACHER;
+CREATE ROLE DEPARTMENT_HEAD;
+CREATE ROLE ADMINISTRATOR;
+
+--GRANT BASIC PRIVILEGES TO ROLES
+GRANT CREATE SESSION TO STUDENT;
+GRANT CREATE SESSION TO COURSE_TEACHER;
+GRANT CREATE SESSION TO DEPARTMENT_HEAD;
+GRANT CREATE SESSION TO ADMINISTRATOR;
+
+--GRANT SPECIFIED PRIVILEGES TO ROLES
+GRANT SELECT ON ADVISOR TO STUDENT;
+GRANT SELECT ON COURSE TO STUDENT;
+GRANT SELECT ON STUDENT TO COURSE_TEACHER;
+GRANT SELECT ON COURSE TO COURSE_TEACHER;
+GRANT SELECT ON STUDENT TO DEPARTMENT_HEAD;
+GRANT SELECT ON COURSE TO DEPARTMENT_HEAD;
+GRANT INSERT ON INSTRUCTOR TO DEPARTMENT_HEAD;
+GRANT SELECT, UPDATE ON DEPARTMENT TO ADMINISTRATOR;
+GRANT SELECT ON INSTRUCTOR TO ADMINISTRATOR;
+
+--CREATE USER
+CREATE USER STUDENT_USER IDENTIFIED BY STUDENT123;
+CREATE USER TEACHER_USER IDENTIFIED BY TEACHER123;
+CREATE USER HEAD_USER IDENTIFIED BY HEAD123;
+CREATE USER ADMINISTRATOR_USER IDENTIFIED BY ADMIN123;
+
+--ASSIGN ROLES
+GRANT STUDENT TO STUDENT_USER;
+GRANT COURSE_TEACHER TO TEACHER_USER;
+GRANT DEPARTMENT_HEAD TO HEAD_USER;
+GRANT ADMINISTRATOR TO ADMINISTRATOR_USER;
+
+
+--04
+-- Create Users and Roles
+
+CREATE USER student_user IDENTIFIED BY student_password;
+CREATE USER teacher_user IDENTIFIED BY teacher_password;
+CREATE USER head_user IDENTIFIED BY head_password;
+CREATE USER admin_user IDENTIFIED BY admin_password;
+
+GRANT STUDENT TO student_user;
+GRANT COURSE_TEACHER TO teacher_user;
+GRANT DEPARTMENT_HEAD TO head_user;
+GRANT ADMINISTRATOR TO admin_user;
+
+-- Test Access Control
+
+-- For the STUDENT role (viewing advisor information and courses):
+-- Login as student_user
+
+-- View advisor information
+SELECT * FROM advisor;
+
+-- View course information
+SELECT * FROM course;
+
+-- For the COURSE_TEACHER role (viewing student and course information):
+-- Login as teacher_user
+
+-- View student information
+SELECT * FROM student;
+
+-- View course information
+SELECT * FROM course;
+
+-- For the DEPARTMENT_HEAD role (similar to COURSE_TEACHER, plus adding new instructors):
+-- Login as head_user
+
+-- View student information
+SELECT * FROM student;
+
+-- View course information
+SELECT * FROM course;
+
+-- Add a new instructor (assuming you have the necessary INSERT privileges)
+INSERT INTO instructor (ID, name, dept_name, salary) VALUES ('NewInstructorID', 'NewInstructorName', 'NewDept', 60000);
+
+-- For the ADMINISTRATOR role (viewing department and instructor information, updating department budget):
+-- Login as admin_user
+
+-- View department information
+SELECT * FROM department;
+
+-- View instructor information
+SELECT * FROM instructor;
+
+-- Update department budget (assuming you have the necessary UPDATE privileges)
+UPDATE department SET budget = 130000 WHERE dept_name = 'Comp. Sci.';
+
+
+

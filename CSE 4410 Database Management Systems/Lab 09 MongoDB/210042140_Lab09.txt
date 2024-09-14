@@ -1,0 +1,137 @@
+// 1. 
+use SocialMedia
+
+// 2. 
+db.createCollection("users", {
+   validator: {
+      $jsonSchema: {
+         bsonType: "object",
+         required: ["name", "email", "password"],
+         properties: {
+            name: { bsonType: "string" },
+            email: { bsonType: "string" },
+            password: { bsonType: "string" }
+         }
+      }
+   }
+})
+
+//3. 
+db.createCollection("posts", {
+   validator: {
+      $jsonSchema: {
+         bsonType: "object",
+         required: ["content"],
+         properties: {
+            content: { bsonType: "string" }
+         }
+      }
+   }
+})
+
+// 4. Insertion
+// (a) An entry of a user with only email, name, and password.
+db.users.insertOne({ name: "Mahmudul Islam Mahin", email: "mahmudulislam@iut-dhaka.edu", password: "mahin140" });
+
+// (b) An entry of users with basic info and hobbies
+db.users.insertOne({
+    name: "Mahmudul Islam Mahin",
+    email: "mahmudulislam@iut-dhaka.edu",
+    password: "mahin140",
+    hobbies: ["Coding", "Gaming"]
+});
+
+// (c) Two entries of users with basic info and telephone number (work and personal)
+db.users.insertMany([
+    {
+        name: "Alvee",
+        email: "alvee@iut-dhaka.edu",
+        password: "alvee174",
+        phoneNumber: { work: "01829786674" }
+    },
+    {
+        name: "Nahiyan",
+        email: "nahiyan@iut-dhaka.edu",
+        password: "nahiyan168",
+        phoneNumber: { personal: "01829786668" }
+    }
+]);
+
+// (d) Four posts with content and creation time
+db.posts.insertMany([
+    { content: "Why CSE is important", creationTime: new Date() },
+    { content: "Why DBMS is important", creationTime: new Date() },
+    { content: "Why MongoDB is important", creationTime: new Date() },
+    { content: "Life is too good", creationTime: new Date() }
+]);
+
+// 5. Update
+// (a) Add multiple followers for multiple users 
+db.users.updateMany({}, { $set: { followers: ["Alvee", "Nahiyan"] } });
+
+// (b) Add multiple friends for multiple users 
+db.users.updateMany({}, { $set: { friends: ["Alvee", "Nahiyan"] } });
+
+// (c) Add multiple users who like a post 
+db.posts.updateMany({}, { $set: { likes: ["Alvee", "Nahiyan"] } });
+
+// (d) Add at least two comments for two posts with the commenters 
+db.posts.updateOne({ content: "Why CSE is important" }, { $set: { comments: [{ commenter: "Alvee", text: "Nice content" }, { commenter: "Nahiyan", text: "Can we get more details?" }] } });
+db.posts.updateOne({ content: "Why DBMS is important" }, { $set: { comments: [{ commenter: "ABC", text: "Good content" }, { commenter: "Nirjhar", text: "Can we get more details?" }] } });
+
+// 6. Data Retrieving
+// (a) Display the total number of posts
+const totalPosts = db.posts.count();
+print("Total posts:", totalPosts);
+
+// (b) Display the most recent to oldest posts along with their poster(s)
+const recentPosts = db.posts.find().sort({ creationTime: -1 });
+print("Most recent posts:");
+recentPosts.forEach(post => {
+    print(post.content, "by", post.poster);
+});
+
+// (c) Show all the posts that were created from yesterday
+const yesterday = new Date();
+yesterday.setDate(yesterday.getDate() - 1);
+const postsFromYesterday = db.posts.find({ creationTime: { $gte: yesterday } });
+print("Posts from yesterday:");
+postsFromYesterday.forEach(post => {
+    print(post.content);
+});
+
+// (d) Show all the users who are following more than 3 users
+const usersFollowingMoreThan3 = db.users.find({ $expr: { $gt: [{ $size: "$followers" }, 3] } });
+print("Users following more than 3 users:");
+usersFollowingMoreThan3.forEach(user => {
+    print(user.name);
+});
+
+// (e) Show all the users who were born within 1990-2000 (assuming a "dateOfBirth" field in users documents)
+const usersBornBetween1990And2000 = db.users.find({ dateOfBirth: { $gte: new Date(1990, 0, 1), $lte: new Date(2000, 11, 31) } });
+print("Users born between 1990 and 2000:");
+usersBornBetween1990And2000.forEach(user => {
+    print(user.name);
+});
+
+// (f) Show three profiles that were created the earliest
+const earliestProfiles = db.users.find().sort({ profileCreationDate: 1 }).limit(3);
+print("Three profiles created the earliest:");
+earliestProfiles.forEach(user => {
+    print(user.name);
+});
+
+// (g) Show all the posts where commenter "ABC" commented
+const postsCommentedByABC = db.posts.find({ "comments.commenter": "ABC" });
+print("Posts commented by ABC:");
+postsCommentedByABC.forEach(post => {
+    print(post.content);
+});
+
+// (h) Show the user’s detail who posted "Life is too good"
+const userWhoPostedLifeIsTooGood = db.users.findOne({ "posts.content": "Life is too good" });
+print("User who posted 'Life is too good':");
+printjson(userWhoPostedLifeIsTooGood);
+
+// 7. Delete the users who don’t have any work phone number
+db.users.deleteMany({ phoneNumber: { $exists: false } });
